@@ -106,18 +106,13 @@ export default function LeadsPipeline() {
   const totalFiltered = filtered.length
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top nav */}
+    <div className="flex flex-col h-full">
+      {/* Page header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4 shrink-0">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              CTK
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-800 leading-tight">Charleston Taekwondo</h1>
-              <p className="text-xs text-slate-500">Leads Pipeline · {totalFiltered} lead{totalFiltered !== 1 ? 's' : ''}</p>
-            </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Leads Pipeline</h2>
+            <p className="text-xs text-slate-500">{totalFiltered} lead{totalFiltered !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={openNew}
