@@ -1,14 +1,22 @@
 import { useState } from 'react'
+import DashboardPage from './pages/DashboardPage'
 import LeadsPipeline from './pages/LeadsPipeline'
 import StudentsPage from './pages/StudentsPage'
 
 const NAV = [
-  { key: 'leads', label: 'Leads Pipeline' },
-  { key: 'students', label: 'Students' },
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'leads',     label: 'Leads Pipeline' },
+  { key: 'students',  label: 'Students' },
 ]
 
+const PAGES = {
+  dashboard: <DashboardPage />,
+  leads:     <LeadsPipeline />,
+  students:  <StudentsPage />,
+}
+
 function App() {
-  const [page, setPage] = useState('leads')
+  const [page, setPage] = useState('dashboard')
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -37,7 +45,7 @@ function App() {
 
       {/* Page content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {page === 'leads' ? <LeadsPipeline /> : <StudentsPage />}
+        {PAGES[page]}
       </div>
     </div>
   )
