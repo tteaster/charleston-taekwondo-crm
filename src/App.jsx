@@ -2,17 +2,20 @@ import { useState } from 'react'
 import DashboardPage from './pages/DashboardPage'
 import LeadsPipeline from './pages/LeadsPipeline'
 import StudentsPage from './pages/StudentsPage'
+import BillingPage from './pages/BillingPage'
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'leads',     label: 'Leads Pipeline' },
   { key: 'students',  label: 'Students' },
+  { key: 'billing',   label: 'Billing' },
 ]
 
 const PAGES = {
   dashboard: <DashboardPage />,
   leads:     <LeadsPipeline />,
   students:  <StudentsPage />,
+  billing:   <BillingPage />,
 }
 
 function App() {
