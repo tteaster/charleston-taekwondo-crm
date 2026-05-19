@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import LeadCard from '../components/LeadCard'
 import LeadModal from '../components/LeadModal'
 
@@ -13,6 +14,7 @@ export const STATUSES = [
 ]
 
 export default function LeadsPipeline() {
+  const { scopedLocationId } = useAuth()
   const [leads, setLeads] = useState([])
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -25,17 +27,16 @@ export default function LeadsPipeline() {
   const fetchLeads = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*, locations(name)')
-      .order('created_at', { ascending: false })
+    let query = supabase.from('leads').select('*, locations(name)').order('created_at', { ascending: false })
+    if (scopedLocationId) query = query.eq('location_id', scopedLocationId)
+    const { data, error } = await query
     if (error) {
       setError(error.message)
     } else {
       setLeads(data ?? [])
     }
     setLoading(false)
-  }, [])
+  }, [scopedLocationId])
 
   useEffect(() => {
     async function init() {
@@ -86,8 +87,9 @@ export default function LeadsPipeline() {
     setModalOpen(true)
   }
 
+  const effectiveLocation = scopedLocationId ?? filterLocation
   const filtered = leads.filter(lead => {
-    if (filterLocation !== 'all' && lead.location_id !== filterLocation) return false
+    if (effectiveLocation !== 'all' && lead.location_id !== effectiveLocation) return false
     if (search) {
       const q = search.toLowerCase()
       const matchName = `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(q)
@@ -130,16 +132,18 @@ export default function LeadsPipeline() {
             onChange={e => setSearch(e.target.value)}
             className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm w-60 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-          <select
-            value={filterLocation}
-            onChange={e => setFilterLocation(e.target.value)}
-            className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="all">All Locations</option>
-            {locations.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
-          </select>
+          {!scopedLocationId && (
+            <select
+              value={filterLocation}
+              onChange={e => setFilterLocation(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="all">All Locations</option>
+              {locations.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </header>
 

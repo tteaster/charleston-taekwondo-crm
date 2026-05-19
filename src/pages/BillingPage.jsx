@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import BillingModal from '../components/BillingModal'
 
 const BILLING_STATUS = {
@@ -49,6 +50,7 @@ function StatCard({ label, value, sub, accent }) {
 }
 
 export default function BillingPage() {
+  const { scopedLocationId } = useAuth()
   const [rows, setRows] = useState([])       // merged student+billing rows
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -64,11 +66,14 @@ export default function BillingPage() {
     setLoading(true)
     setError(null)
 
+    let studentsQuery = supabase
+      .from('students')
+      .select('id, student_first_name, student_last_name, parent_phone, status, location_id, locations(name)')
+      .order('student_last_name')
+    if (scopedLocationId) studentsQuery = studentsQuery.eq('location_id', scopedLocationId)
+
     const [studentsRes, locationsRes] = await Promise.all([
-      supabase
-        .from('students')
-        .select('id, student_first_name, student_last_name, parent_phone, status, location_id, locations(name)')
-        .order('student_last_name'),
+      studentsQuery,
       supabase.from('locations').select('*').order('name'),
     ])
 
@@ -91,7 +96,7 @@ export default function BillingPage() {
 
     setRows(students.map(s => ({ ...s, billing: billingByStudent[s.id] ?? null })))
     setLoading(false)
-  }, [])
+  }, [scopedLocationId])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -128,8 +133,9 @@ export default function BillingPage() {
   }
 
   // ── filters ────────────────────────────────────────────────────────────────
+  const effectiveLocation = scopedLocationId ?? filterLocation
   const filtered = rows.filter(r => {
-    if (filterLocation !== 'all' && r.location_id !== filterLocation) return false
+    if (effectiveLocation !== 'all' && r.location_id !== effectiveLocation) return false
     if (filterStatus !== 'all') {
       if (filterStatus === 'no_billing' && r.billing) return false
       if (filterStatus !== 'no_billing' && r.billing?.status !== filterStatus) return false
@@ -203,14 +209,16 @@ export default function BillingPage() {
             onChange={e => setSearch(e.target.value)}
             className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm w-60 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-          <select
-            value={filterLocation}
-            onChange={e => setFilterLocation(e.target.value)}
-            className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="all">All Locations</option>
-            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-          </select>
+          {!scopedLocationId && (
+            <select
+              value={filterLocation}
+              onChange={e => setFilterLocation(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="all">All Locations</option>
+              {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+            </select>
+          )}
 
           <div className="flex rounded-lg border border-slate-300 overflow-hidden text-sm">
             {STATUS_FILTERS.map(f => (

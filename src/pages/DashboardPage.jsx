@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 // ── inline chart helpers ────────────────────────────────────────────────────
 
@@ -132,6 +133,7 @@ function groupBy(arr, key) {
 // ── main component ──────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { scopedLocationId } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -140,13 +142,22 @@ export default function DashboardPage() {
     async function load() {
       setLoading(true)
       setError(null)
+
+      let sQ = supabase.from('students').select('status, program, location_id, locations(name)')
+      let lQ = supabase.from('leads').select('id, status, created_at')
+      let rQ = supabase.from('leads')
+        .select('id, first_name, last_name, child_name, source, status, created_at, location_id, locations(name)')
+        .order('created_at', { ascending: false })
+      if (scopedLocationId) {
+        sQ = sQ.eq('location_id', scopedLocationId)
+        lQ = lQ.eq('location_id', scopedLocationId)
+        rQ = rQ.eq('location_id', scopedLocationId)
+      }
+
       const [studentsRes, leadsRes, recentRes] = await Promise.all([
-        supabase.from('students').select('status, program, location_id, locations(name)'),
-        supabase.from('leads').select('id, status, created_at'),
-        supabase
-          .from('leads')
-          .select('id, first_name, last_name, child_name, source, status, created_at, location_id, locations(name)')
-          .order('created_at', { ascending: false })
+        sQ,
+        lQ,
+        rQ
           .limit(5),
       ])
 
@@ -190,7 +201,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [scopedLocationId])
 
   if (loading) {
     return (

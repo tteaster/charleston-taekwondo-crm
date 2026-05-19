@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import StudentCard from '../components/StudentCard'
 import StudentModal from '../components/StudentModal'
 
@@ -12,6 +13,7 @@ const STATUS_FILTERS = [
 ]
 
 export default function StudentsPage() {
+  const { scopedLocationId } = useAuth()
   const [students, setStudents] = useState([])
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -25,17 +27,16 @@ export default function StudentsPage() {
   const fetchStudents = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const { data, error } = await supabase
-      .from('students')
-      .select('*, locations(name)')
-      .order('student_last_name', { ascending: true })
+    let query = supabase.from('students').select('*, locations(name)').order('student_last_name', { ascending: true })
+    if (scopedLocationId) query = query.eq('location_id', scopedLocationId)
+    const { data, error } = await query
     if (error) {
       setError(error.message)
     } else {
       setStudents(data ?? [])
     }
     setLoading(false)
-  }, [])
+  }, [scopedLocationId])
 
   useEffect(() => {
     async function init() {
@@ -81,8 +82,9 @@ export default function StudentsPage() {
     setModalOpen(true)
   }
 
+  const effectiveLocation = scopedLocationId ?? filterLocation
   const filtered = students.filter(s => {
-    if (filterLocation !== 'all' && s.location_id !== filterLocation) return false
+    if (effectiveLocation !== 'all' && s.location_id !== effectiveLocation) return false
     if (filterStatus !== 'all' && s.status !== filterStatus) return false
     if (search) {
       const q = search.toLowerCase()
@@ -126,16 +128,18 @@ export default function StudentsPage() {
             onChange={e => setSearch(e.target.value)}
             className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-          <select
-            value={filterLocation}
-            onChange={e => setFilterLocation(e.target.value)}
-            className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="all">All Locations</option>
-            {locations.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
-          </select>
+          {!scopedLocationId && (
+            <select
+              value={filterLocation}
+              onChange={e => setFilterLocation(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="all">All Locations</option>
+              {locations.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          )}
 
           {/* Status tabs */}
           <div className="flex rounded-lg border border-slate-300 overflow-hidden text-sm">
