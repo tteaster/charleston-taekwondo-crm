@@ -9,12 +9,29 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true)
 
   async function fetchStaff(email) {
-    const { data } = await supabase
+    console.log('[Auth] fetchStaff → looking up email:', email)
+
+    const { data, error } = await supabase
       .from('staff')
       .select('*')
-      .eq('email', email)
+      .ilike('email', email)   // case-insensitive match
       .maybeSingle()
-    setStaff(data ?? null)
+
+    console.log('[Auth] staff query result →', { data, error })
+
+    const staffRecord = data ?? null
+    const computedIsAdmin = !staffRecord || ['owner', 'admin'].includes(staffRecord?.role)
+    const computedScope   = computedIsAdmin ? null : (staffRecord?.location_id ?? null)
+
+    console.log('[Auth] resolved →', {
+      role:             staffRecord?.role ?? '(no record)',
+      isAdmin:          computedIsAdmin,
+      scopedLocationId: computedScope,
+    })
+
+    if (error) console.error('[Auth] staff lookup error:', error.message, error.details)
+
+    setStaff(staffRecord)
     setAuthLoading(false)
   }
 
