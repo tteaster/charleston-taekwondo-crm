@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { syncStudentProgram, checkEnrollmentConflict } from '../lib/membership'
 
-const CYCLE_SUFFIX = { weekly: '/wk', biweekly: '/2wk', monthly: '/mo' }
-const CATEGORY_LABEL = { afterschool: 'After School', martial_arts: 'Martial Arts', leadership: 'Leadership' }
-
-const STATUS_CLS = {
+const CYCLE_SUFFIX    = { weekly: '/wk', biweekly: '/2wk', monthly: '/mo' }
+const CATEGORY_LABEL  = { afterschool: 'After School', martial_arts: 'Martial Arts', leadership: 'Leadership' }
+const STATUS_CLS      = {
   active:    'bg-emerald-100 text-emerald-700',
   paused:    'bg-amber-100 text-amber-700',
   cancelled: 'bg-slate-100 text-slate-500',
@@ -13,15 +13,15 @@ const STATUS_CLS = {
 
 export default function StudentMembershipPanel({ studentId }) {
   const { canEdit } = useAuth()
-  const [memberships, setMemberships] = useState([])
-  const [allTypes, setAllTypes] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [memberships, setMemberships]     = useState([])
+  const [allTypes, setAllTypes]           = useState([])
+  const [loading, setLoading]             = useState(true)
+  const [showForm, setShowForm]           = useState(false)
   const [selectedTypeId, setSelectedTypeId] = useState('')
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
-  const [notes, setNotes] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
+  const [startDate, setStartDate]         = useState(new Date().toISOString().slice(0, 10))
+  const [notes, setNotes]                 = useState('')
+  const [saving, setSaving]               = useState(false)
+  const [error, setError]                 = useState(null)
 
   useEffect(() => {
     if (!studentId) return
@@ -43,7 +43,7 @@ export default function StudentMembershipPanel({ studentId }) {
     setLoading(false)
   }
 
-  // Determine which membership slots are taken (active/paused count as held)
+  // Slots held by active or paused memberships
   const heldAfterSchool = memberships.some(
     m => m.status !== 'cancelled' && m.membership_types?.category === 'afterschool'
   )
@@ -62,17 +62,23 @@ export default function StudentMembershipPanel({ studentId }) {
     if (!selectedTypeId) return
     setSaving(true)
     setError(null)
+
+    const selectedType = allTypes.find(t => t.id === selectedTypeId)
+    const conflict = await checkEnrollmentConflict(studentId, selectedType?.category)
+    if (conflict) { setError(conflict); setSaving(false); return }
+
     const { error } = await supabase.from('student_memberships').insert({
-      student_id: studentId,
+      student_id:         studentId,
       membership_type_id: selectedTypeId,
-      status: 'active',
-      start_date: startDate || null,
-      notes: notes || null,
+      status:             'active',
+      start_date:         startDate || null,
+      notes:              notes || null,
     })
     if (error) {
       setError(error.message)
       setSaving(false)
     } else {
+      await syncStudentProgram(studentId)
       setShowForm(false)
       setSelectedTypeId('')
       setNotes('')
@@ -82,16 +88,15 @@ export default function StudentMembershipPanel({ studentId }) {
   }
 
   async function handleCancel(membershipId) {
-    await supabase
-      .from('student_memberships')
-      .update({ status: 'cancelled' })
-      .eq('id', membershipId)
+    await supabase.from('student_memberships').update({ status: 'cancelled' }).eq('id', membershipId)
+    await syncStudentProgram(studentId)
     loadData()
   }
 
   async function handlePause(membershipId, currentStatus) {
     const next = currentStatus === 'paused' ? 'active' : 'paused'
     await supabase.from('student_memberships').update({ status: next }).eq('id', membershipId)
+    await syncStudentProgram(studentId)
     loadData()
   }
 
@@ -138,19 +143,13 @@ export default function StudentMembershipPanel({ studentId }) {
                   </span>
                   {canEdit && (
                     <div className="flex gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handlePause(m.id, m.status)}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-white"
-                      >
+                      <button type="button" onClick={() => handlePause(m.id, m.status)}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-white">
                         {m.status === 'paused' ? 'Resume' : 'Pause'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCancel(m.id)}
-                        className="text-xs text-rose-500 hover:text-rose-700 px-1.5 py-0.5 rounded border border-rose-200 hover:bg-rose-50"
-                      >
-                        Cancel
+                      <button type="button" onClick={() => handleCancel(m.id)}
+                        className="text-xs text-rose-500 hover:text-rose-700 px-1.5 py-0.5 rounded border border-rose-200 hover:bg-rose-50">
+                        Remove
                       </button>
                     </div>
                   )}
@@ -159,15 +158,12 @@ export default function StudentMembershipPanel({ studentId }) {
             })}
           </div>
 
-          {/* Add form */}
           {showForm && canEdit && (
             <form onSubmit={handleAdd} className="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
               <p className="text-xs font-semibold text-indigo-700 mb-2">Assign Membership</p>
 
               {availableTypes.length === 0 ? (
-                <p className="text-xs text-slate-500">
-                  Both slots are already taken (1 martial arts/leadership + 1 afterschool).
-                </p>
+                <p className="text-xs text-slate-500">Both slots are taken (1 martial arts/leadership + 1 afterschool).</p>
               ) : (
                 <>
                   <select
@@ -195,40 +191,23 @@ export default function StudentMembershipPanel({ studentId }) {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs text-slate-600 mb-0.5">Start Date</label>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                      />
+                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-600 mb-0.5">Notes</label>
-                      <input
-                        type="text"
-                        value={notes}
-                        onChange={e => setNotes(e.target.value)}
-                        placeholder="optional"
-                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                      />
+                      <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="optional"
+                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                     </div>
                   </div>
 
                   {error && <p className="text-xs text-rose-600">{error}</p>}
 
                   <div className="flex gap-2 justify-end pt-1">
-                    <button
-                      type="button"
-                      onClick={() => { setShowForm(false); setSelectedTypeId(''); setError(null) }}
-                      className="text-xs text-slate-500 hover:text-slate-700"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={saving || !selectedTypeId}
-                      className="text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-1 rounded font-medium"
-                    >
+                    <button type="button" onClick={() => { setShowForm(false); setSelectedTypeId(''); setError(null) }}
+                      className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
+                    <button type="submit" disabled={saving || !selectedTypeId}
+                      className="text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-1 rounded font-medium">
                       {saving ? 'Adding…' : 'Add Membership'}
                     </button>
                   </div>
