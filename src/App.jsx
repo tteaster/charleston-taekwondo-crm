@@ -69,11 +69,6 @@ export default function App() {
 
         {/* Right side: user info + sign out */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
-          {isAdmin && !canEdit && (
-            <span className="text-xs bg-amber-400/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded hidden sm:block">
-              Read-only
-            </span>
-          )}
           {canEdit && staff?.location_id && (
             <span className="text-xs bg-white/15 text-indigo-100 px-2 py-0.5 rounded hidden sm:block">
               {staff.locations?.name ?? 'Scoped'}

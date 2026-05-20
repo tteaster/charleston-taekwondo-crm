@@ -44,11 +44,12 @@ export function AuthProvider({ children }) {
 
   const role = staff?.role ?? null
 
-  // admin: read-only access across all locations
-  // office_manager / head_instructor: full CRUD within their location
-  const isAdmin         = role === 'admin' || role === null
-  const canEdit         = role === 'office_manager' || role === 'head_instructor'
-  const scopedLocationId = canEdit ? (staff?.location_id ?? null) : null
+  // admin: full CRUD across all locations (no location filter)
+  // office_manager / head_instructor: full CRUD within their assigned location
+  // no staff record: read-only safety fallback
+  const isAdmin          = role === 'admin' || role === null
+  const canEdit          = ['admin', 'office_manager', 'head_instructor'].includes(role ?? '')
+  const scopedLocationId = isAdmin ? null : (staff?.location_id ?? null)
 
   async function signOut() {
     await supabase.auth.signOut()
