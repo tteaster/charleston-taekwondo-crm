@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react'
 import StudentMembershipPanel from './StudentMembershipPanel'
 
-const PROGRAMS = [
-  { value: 'tkd', label: 'Taekwondo (TKD)' },
-  { value: 'asp', label: 'After School Program (ASP)' },
-  { value: 'tkd_asp', label: 'TKD + ASP' },
-]
-
 const STATUSES = [
   { value: 'trial', label: 'Trial' },
   { value: 'active', label: 'Active' },
@@ -33,7 +27,6 @@ const EMPTY = {
   parent_phone: '',
   student_dob: '',
   location_id: '',
-  program: '',
   status: 'trial',
   belt_rank: 'white',
   stripe_count: '0',
@@ -72,7 +65,6 @@ export default function StudentModal({ student, locations, onSave, onClose }) {
         parent_phone:       student.parent_phone ?? '',
         student_dob:        student.student_dob ?? '',
         location_id:        student.location_id ?? '',
-        program:            student.program ?? '',
         status:             student.status ?? 'trial',
         belt_rank:          student.belt_rank ?? 'white',
         stripe_count:       String(student.stripe_count ?? 0),
@@ -101,7 +93,6 @@ export default function StudentModal({ student, locations, onSave, onClose }) {
       parent_phone:       form.parent_phone || null,
       student_dob:        form.student_dob || null,
       location_id:        form.location_id || null,
-      program:            form.program || null,
       status:             form.status,
       belt_rank:          form.belt_rank || null,
       stripe_count:       parseInt(form.stripe_count) || 0,
@@ -184,23 +175,15 @@ export default function StudentModal({ student, locations, onSave, onClose }) {
                   {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                 </select>
               </Field>
-              <Field label="Program">
-                <select value={form.program} onChange={e => set('program', e.target.value)} className={inputCls}>
-                  <option value="">— Select —</option>
-                  {PROGRAMS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
-              </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Field label="Status">
                 <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
                   {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </Field>
-              <Field label="Enrollment Date">
-                <input type="date" value={form.enrollment_date} onChange={e => set('enrollment_date', e.target.value)} className={inputCls} />
-              </Field>
             </div>
+            <Field label="Enrollment Date">
+              <input type="date" value={form.enrollment_date} onChange={e => set('enrollment_date', e.target.value)} className={inputCls} />
+            </Field>
           </div>
 
           {/* Trial dates — only shown for trial status */}
