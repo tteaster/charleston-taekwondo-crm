@@ -13,6 +13,7 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import PublicLeaderboard from './pages/PublicLeaderboard'
 import EventsPage from './pages/EventsPage'
 import PublicRegistration from './pages/PublicRegistration'
+import CommunicationsPage from './pages/CommunicationsPage'
 
 const NAV = [
   { key: 'dashboard',   label: 'Dashboard' },
@@ -23,7 +24,8 @@ const NAV = [
   { key: 'finances',    label: 'Finances' },
   { key: 'attendance',  label: 'Attendance' },
   { key: 'leaderboard', label: 'Leaderboard' },
-  { key: 'events',      label: 'Events' },
+  { key: 'events',         label: 'Events' },
+  { key: 'communications', label: 'Comms' },
 ]
 
 function Spinner() {
@@ -52,7 +54,8 @@ function CRMShell() {
     finances:    <FinancesPage />,
     attendance:  <AttendancePage />,
     leaderboard: <LeaderboardPage />,
-    events:      <EventsPage />,
+    events:         <EventsPage />,
+    communications: <CommunicationsPage />,
   }
 
   return (
