@@ -10,6 +10,8 @@ import BillingPage from './pages/BillingPage'
 import AttendancePage from './pages/AttendancePage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import PublicLeaderboard from './pages/PublicLeaderboard'
+import EventsPage from './pages/EventsPage'
+import PublicRegistration from './pages/PublicRegistration'
 
 const NAV = [
   { key: 'dashboard',   label: 'Dashboard' },
@@ -19,6 +21,7 @@ const NAV = [
   { key: 'billing',     label: 'Billing' },
   { key: 'attendance',  label: 'Attendance' },
   { key: 'leaderboard', label: 'Leaderboard' },
+  { key: 'events',      label: 'Events' },
 ]
 
 function Spinner() {
@@ -46,6 +49,7 @@ function CRMShell() {
     billing:     <BillingPage />,
     attendance:  <AttendancePage />,
     leaderboard: <LeaderboardPage />,
+    events:      <EventsPage />,
   }
 
   return (
@@ -109,6 +113,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/leaderboard/:slug" element={<PublicLeaderboard />} />
+      <Route path="/register/:eventId" element={<PublicRegistration />} />
       <Route path="/*" element={<CRMShell />} />
     </Routes>
   )
