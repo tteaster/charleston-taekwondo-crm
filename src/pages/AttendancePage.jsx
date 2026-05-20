@@ -75,37 +75,70 @@ function CheckInView({ classTab, locationId, staff }) {
   }, [search, locationId])
 
   async function checkIn() {
-    if (!selected || !locationId || !canEdit) return
+    console.log('[CheckIn] button clicked', { selected, locationId, canEdit })
+
+    if (!canEdit) {
+      console.warn('[CheckIn] blocked: user does not have canEdit permission')
+      return
+    }
+    if (!selected) {
+      console.warn('[CheckIn] blocked: no student selected')
+      return
+    }
+    if (!locationId) {
+      console.warn('[CheckIn] blocked: no location selected — admin must pick a specific location')
+      setToast('⚠ Please select a location before checking in')
+      return
+    }
+
     setSaving(true)
 
     const now = new Date()
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
-    const { data: att, error } = await supabase
+    const attendancePayload = {
+      student_id:     selected.id,
+      location_id:    locationId,
+      class_date:     today,
+      class_time:     timeStr,
+      class_type:     classType,
+      checked_in_by:  staff?.id ?? null,
+      points_awarded: 10,
+    }
+    console.log('[CheckIn] inserting attendance:', attendancePayload)
+
+    const { data: att, error: attError } = await supabase
       .from('attendance')
-      .insert({
-        student_id:     selected.id,
-        location_id:    locationId,
-        class_date:     today,
-        class_time:     timeStr,
-        class_type:     classType,
-        checked_in_by:  staff?.id ?? null,
-        points_awarded: 10,
-      })
+      .insert(attendancePayload)
       .select()
       .single()
 
-    if (!error && att) {
-      await supabase.from('points_log').insert({
-        student_id:   selected.id,
-        location_id:  locationId,
-        points:       10,
-        reason:       'attendance',
-        reference_id: att.id,
-        awarded_by:   staff?.id ?? null,
-      })
-      setToast(`✓ ${selected.student_first_name} checked in — +10 pts`)
+    console.log('[CheckIn] attendance result:', { att, error: attError })
+
+    if (attError) {
+      console.error('[CheckIn] attendance insert failed:', attError)
+      setSaving(false)
+      return
     }
+
+    const pointsPayload = {
+      student_id:   selected.id,
+      location_id:  locationId,
+      points:       10,
+      reason:       'attendance',
+      reference_id: att.id,
+      awarded_by:   staff?.id ?? null,
+    }
+    console.log('[CheckIn] inserting points_log:', pointsPayload)
+
+    const { error: pointsError } = await supabase
+      .from('points_log')
+      .insert(pointsPayload)
+
+    console.log('[CheckIn] points_log result:', { error: pointsError })
+    if (pointsError) console.error('[CheckIn] points_log insert failed:', pointsError)
+
+    setToast(`✓ ${selected.student_first_name} checked in — +10 pts`)
 
     setSelected(null)
     setSearch('')
