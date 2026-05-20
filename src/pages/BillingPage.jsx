@@ -50,7 +50,7 @@ function StatCard({ label, value, sub, accent }) {
 }
 
 export default function BillingPage() {
-  const { scopedLocationId } = useAuth()
+  const { scopedLocationId, canEdit } = useAuth()
   const [rows, setRows] = useState([])       // merged student+billing rows
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -315,7 +315,7 @@ export default function BillingPage() {
                     </td>
                     {/* Action */}
                     <td className="px-4 py-3 text-right">
-                      {b ? (
+                      {canEdit && (b ? (
                         <button
                           onClick={() => openModal(row, b)}
                           className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
@@ -329,7 +329,7 @@ export default function BillingPage() {
                         >
                           + Add Billing
                         </button>
-                      )}
+                      ))}
                     </td>
                   </tr>
                 )

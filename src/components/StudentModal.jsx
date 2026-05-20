@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import StudentMembershipPanel from './StudentMembershipPanel'
 
 const PROGRAMS = [
   { value: 'tkd', label: 'Taekwondo (TKD)' },
@@ -240,6 +241,9 @@ export default function StudentModal({ student, locations, onSave, onClose }) {
               className={`${inputCls} resize-none`}
             />
           </Field>
+
+          {/* Memberships — only when editing an existing student */}
+          {student?.id && <StudentMembershipPanel studentId={student.id} />}
 
           {error && (
             <p className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{error}</p>

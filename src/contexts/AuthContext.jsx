@@ -9,41 +9,25 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true)
 
   async function fetchStaff(email) {
-    console.log('[Auth] fetchStaff → looking up email:', email)
-
     const { data, error } = await supabase
       .from('staff')
       .select('*')
-      .ilike('email', email)   // case-insensitive match
+      .ilike('email', email)
       .maybeSingle()
 
-    console.log('[Auth] staff query result →', { data, error })
+    if (error) console.error('[Auth] staff lookup error:', error.message)
 
-    const staffRecord = data ?? null
-    const computedIsAdmin = !staffRecord || ['owner', 'admin'].includes(staffRecord?.role)
-    const computedScope   = computedIsAdmin ? null : (staffRecord?.location_id ?? null)
-
-    console.log('[Auth] resolved →', {
-      role:             staffRecord?.role ?? '(no record)',
-      isAdmin:          computedIsAdmin,
-      scopedLocationId: computedScope,
-    })
-
-    if (error) console.error('[Auth] staff lookup error:', error.message, error.details)
-
-    setStaff(staffRecord)
+    setStaff(data ?? null)
     setAuthLoading(false)
   }
 
   useEffect(() => {
-    // Resolve current session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) fetchStaff(session.user.email)
       else setAuthLoading(false)
     })
 
-    // React to sign-in / sign-out events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         setSession(session)
@@ -58,15 +42,20 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const isAdmin = !staff || ['owner', 'admin'].includes(staff.role)
-  const scopedLocationId = isAdmin ? null : (staff?.location_id ?? null)
+  const role = staff?.role ?? null
+
+  // admin: read-only access across all locations
+  // office_manager / head_instructor: full CRUD within their location
+  const isAdmin         = role === 'admin' || role === null
+  const canEdit         = role === 'office_manager' || role === 'head_instructor'
+  const scopedLocationId = canEdit ? (staff?.location_id ?? null) : null
 
   async function signOut() {
     await supabase.auth.signOut()
   }
 
   return (
-    <AuthContext.Provider value={{ session, staff, isAdmin, scopedLocationId, authLoading, signOut }}>
+    <AuthContext.Provider value={{ session, staff, isAdmin, canEdit, scopedLocationId, authLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   )

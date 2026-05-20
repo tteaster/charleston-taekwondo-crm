@@ -13,7 +13,7 @@ const STATUS_FILTERS = [
 ]
 
 export default function StudentsPage() {
-  const { scopedLocationId } = useAuth()
+  const { scopedLocationId, canEdit } = useAuth()
   const [students, setStudents] = useState([])
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -111,12 +111,14 @@ export default function StudentsPage() {
             <h2 className="text-base font-bold text-slate-800">Students</h2>
             <p className="text-xs text-slate-500">{filtered.length} of {students.length} student{students.length !== 1 ? 's' : ''}</p>
           </div>
-          <button
-            onClick={openNew}
-            className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            + Add Student
-          </button>
+          {canEdit && (
+            <button
+              onClick={openNew}
+              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              + Add Student
+            </button>
+          )}
         </div>
 
         {/* Filters */}

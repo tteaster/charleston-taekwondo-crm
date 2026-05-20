@@ -14,7 +14,7 @@ export const STATUSES = [
 ]
 
 export default function LeadsPipeline() {
-  const { scopedLocationId } = useAuth()
+  const { scopedLocationId, canEdit } = useAuth()
   const [leads, setLeads] = useState([])
   const [locations, setLocations] = useState([])
   const [filterLocation, setFilterLocation] = useState('all')
@@ -116,12 +116,14 @@ export default function LeadsPipeline() {
             <h2 className="text-base font-bold text-slate-800">Leads Pipeline</h2>
             <p className="text-xs text-slate-500">{totalFiltered} lead{totalFiltered !== 1 ? 's' : ''}</p>
           </div>
-          <button
-            onClick={openNew}
-            className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            + Add Lead
-          </button>
+          {canEdit && (
+            <button
+              onClick={openNew}
+              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              + Add Lead
+            </button>
+          )}
         </div>
 
         <div className="flex gap-3 flex-wrap">

@@ -1,3 +1,5 @@
+import { useAuth } from '../contexts/AuthContext'
+
 const STATUS_STYLES = {
   trial:     'bg-amber-100 text-amber-700',
   active:    'bg-emerald-100 text-emerald-700',
@@ -35,9 +37,10 @@ function Stripes({ count }) {
 }
 
 export default function StudentCard({ student, onEdit }) {
-  const fullName = `${student.student_first_name} ${student.student_last_name}`
+  const { canEdit } = useAuth()
+  const fullName   = `${student.student_first_name} ${student.student_last_name}`
   const parentName = `${student.parent_first_name} ${student.parent_last_name}`
-  const belt = student.belt_rank
+  const belt   = student.belt_rank
   const stripes = student.stripe_count ?? 0
 
   return (
@@ -81,13 +84,15 @@ export default function StudentCard({ student, onEdit }) {
         </p>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex justify-end">
-        <button
-          onClick={onEdit}
-          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-        >
-          Edit
-        </button>
+      <div className="pt-2 border-t border-slate-100 flex justify-end min-h-[1.5rem]">
+        {canEdit && (
+          <button
+            onClick={onEdit}
+            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            Edit
+          </button>
+        )}
       </div>
     </div>
   )

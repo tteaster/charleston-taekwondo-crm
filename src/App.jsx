@@ -4,13 +4,15 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import LeadsPipeline from './pages/LeadsPipeline'
 import StudentsPage from './pages/StudentsPage'
+import MembershipsPage from './pages/MembershipsPage'
 import BillingPage from './pages/BillingPage'
 
 const NAV = [
-  { key: 'dashboard', label: 'Dashboard' },
-  { key: 'leads',     label: 'Leads Pipeline' },
-  { key: 'students',  label: 'Students' },
-  { key: 'billing',   label: 'Billing' },
+  { key: 'dashboard',   label: 'Dashboard' },
+  { key: 'leads',       label: 'Leads Pipeline' },
+  { key: 'students',    label: 'Students' },
+  { key: 'memberships', label: 'Memberships' },
+  { key: 'billing',     label: 'Billing' },
 ]
 
 function Spinner() {
@@ -22,22 +24,20 @@ function Spinner() {
 }
 
 export default function App() {
-  const { session, staff, isAdmin, scopedLocationId, authLoading, signOut } = useAuth()
+  const { session, staff, isAdmin, canEdit, scopedLocationId, authLoading, signOut } = useAuth()
   const [page, setPage] = useState('dashboard')
 
   if (authLoading) return <Spinner />
   if (!session)    return <LoginPage />
 
   const displayName = staff?.name ?? session.user.email
-  const locationLabel = !isAdmin && staff?.location_id
-    ? (staff.location_id) // will be replaced by location name once staff record has it joined
-    : null
 
   const pages = {
-    dashboard: <DashboardPage />,
-    leads:     <LeadsPipeline />,
-    students:  <StudentsPage />,
-    billing:   <BillingPage />,
+    dashboard:   <DashboardPage />,
+    leads:       <LeadsPipeline />,
+    students:    <StudentsPage />,
+    memberships: <MembershipsPage />,
+    billing:     <BillingPage />,
   }
 
   return (
@@ -69,7 +69,12 @@ export default function App() {
 
         {/* Right side: user info + sign out */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
-          {staff && !isAdmin && (
+          {isAdmin && !canEdit && (
+            <span className="text-xs bg-amber-400/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded hidden sm:block">
+              Read-only
+            </span>
+          )}
+          {canEdit && staff?.location_id && (
             <span className="text-xs bg-white/15 text-indigo-100 px-2 py-0.5 rounded hidden sm:block">
               {staff.locations?.name ?? 'Scoped'}
             </span>

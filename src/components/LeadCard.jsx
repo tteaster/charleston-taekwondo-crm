@@ -1,3 +1,5 @@
+import { useAuth } from '../contexts/AuthContext'
+
 const SOURCE_COLORS = {
   walk_in: 'bg-teal-100 text-teal-700',
   website: 'bg-blue-100 text-blue-700',
@@ -17,6 +19,7 @@ const SOURCE_LABELS = {
 }
 
 export default function LeadCard({ lead, statuses, onEdit, onStatusChange }) {
+  const { canEdit } = useAuth()
   const fullName = `${lead.first_name} ${lead.last_name}`
 
   return (
@@ -49,24 +52,26 @@ export default function LeadCard({ lead, statuses, onEdit, onStatusChange }) {
         </p>
       )}
 
-      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-        <select
-          value={lead.status}
-          onChange={e => onStatusChange(e.target.value)}
-          onClick={e => e.stopPropagation()}
-          className="text-xs border border-slate-200 rounded px-1.5 py-1 flex-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
-        >
-          {statuses.map(s => (
-            <option key={s.key} value={s.key}>{s.label}</option>
-          ))}
-        </select>
-        <button
-          onClick={onEdit}
-          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium shrink-0"
-        >
-          Edit
-        </button>
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+          <select
+            value={lead.status}
+            onChange={e => onStatusChange(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            className="text-xs border border-slate-200 rounded px-1.5 py-1 flex-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          >
+            {statuses.map(s => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={onEdit}
+            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium shrink-0"
+          >
+            Edit
+          </button>
+        </div>
+      )}
     </div>
   )
 }
