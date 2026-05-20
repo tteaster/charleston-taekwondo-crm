@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import StudentCard from '../components/StudentCard'
 import StudentModal from '../components/StudentModal'
+import StudentProfile from '../components/StudentProfile'
 
 const STATUS_FILTERS = [
   { key: 'all',       label: 'All' },
@@ -21,6 +22,7 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
+  const [profileStudent, setProfileStudent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -189,6 +191,7 @@ export default function StudentsPage() {
                 key={student.id}
                 student={student}
                 onEdit={() => openEdit(student)}
+                onProfile={() => setProfileStudent(student)}
               />
             ))}
           </div>
@@ -201,6 +204,14 @@ export default function StudentsPage() {
           locations={locations}
           onSave={handleSave}
           onClose={() => { setModalOpen(false); setEditingStudent(null) }}
+        />
+      )}
+
+      {profileStudent && (
+        <StudentProfile
+          student={profileStudent}
+          onClose={() => setProfileStudent(null)}
+          onEdit={s => { setProfileStudent(null); openEdit(s) }}
         />
       )}
     </div>

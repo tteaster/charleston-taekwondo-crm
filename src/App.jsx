@@ -7,6 +7,7 @@ import LeadsPipeline from './pages/LeadsPipeline'
 import StudentsPage from './pages/StudentsPage'
 import MembershipsPage from './pages/MembershipsPage'
 import BillingPage from './pages/BillingPage'
+import FinancesPage from './pages/FinancesPage'
 import AttendancePage from './pages/AttendancePage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import PublicLeaderboard from './pages/PublicLeaderboard'
@@ -19,6 +20,7 @@ const NAV = [
   { key: 'students',    label: 'Students' },
   { key: 'memberships', label: 'Memberships' },
   { key: 'billing',     label: 'Billing' },
+  { key: 'finances',    label: 'Finances' },
   { key: 'attendance',  label: 'Attendance' },
   { key: 'leaderboard', label: 'Leaderboard' },
   { key: 'events',      label: 'Events' },
@@ -47,6 +49,7 @@ function CRMShell() {
     students:    <StudentsPage />,
     memberships: <MembershipsPage />,
     billing:     <BillingPage />,
+    finances:    <FinancesPage />,
     attendance:  <AttendancePage />,
     leaderboard: <LeaderboardPage />,
     events:      <EventsPage />,

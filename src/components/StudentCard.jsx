@@ -36,7 +36,7 @@ function Stripes({ count }) {
   )
 }
 
-export default function StudentCard({ student, onEdit }) {
+export default function StudentCard({ student, onEdit, onProfile }) {
   const { canEdit } = useAuth()
   const fullName   = `${student.student_first_name} ${student.student_last_name}`
   const parentName = `${student.parent_first_name} ${student.parent_last_name}`
@@ -44,7 +44,10 @@ export default function StudentCard({ student, onEdit }) {
   const stripes = student.stripe_count ?? 0
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow ${onProfile ? 'cursor-pointer' : ''}`}
+      onClick={onProfile ?? undefined}
+    >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0 mr-3">
           <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{fullName}</p>
@@ -87,7 +90,7 @@ export default function StudentCard({ student, onEdit }) {
       <div className="pt-2 border-t border-slate-100 flex justify-end min-h-[1.5rem]">
         {canEdit && (
           <button
-            onClick={onEdit}
+            onClick={e => { e.stopPropagation(); onEdit() }}
             className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
           >
             Edit
