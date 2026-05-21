@@ -15,6 +15,7 @@ import EventsPage from './pages/EventsPage'
 import PublicRegistration from './pages/PublicRegistration'
 import CommunicationsPage from './pages/CommunicationsPage'
 import ReportsPage from './pages/ReportsPage'
+import RetailPage from './pages/RetailPage'
 
 const NAV = [
   { key: 'dashboard',   label: 'Dashboard' },
@@ -27,6 +28,7 @@ const NAV = [
   { key: 'leaderboard', label: 'Leaderboard' },
   { key: 'events',         label: 'Events' },
   { key: 'communications', label: 'Comms' },
+  { key: 'retail',         label: 'Retail' },
   { key: 'reports',        label: 'Reports' },
 ]
 
@@ -58,6 +60,7 @@ function CRMShell() {
     leaderboard: <LeaderboardPage />,
     events:         <EventsPage />,
     communications: <CommunicationsPage />,
+    retail:         <RetailPage />,
     reports:        <ReportsPage />,
   }
 

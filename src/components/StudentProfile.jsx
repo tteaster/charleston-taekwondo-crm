@@ -160,6 +160,7 @@ export default function StudentProfile({ student, onClose, onEdit }) {
   const [monthlyPts,  setMonthlyPts]    = useState(0)
   const [monthlyRank, setMonthlyRank]   = useState(null)
   const [loading,     setLoading]       = useState(true)
+  const [retailPurchases, setRetailPurchases] = useState([])
   const [showPayModal, setShowPayModal] = useState(false)
 
   const fullName = `${student.student_first_name} ${student.student_last_name}`
@@ -172,7 +173,7 @@ export default function StudentProfile({ student, onClose, onEdit }) {
 
     const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0)
 
-    const [membRes, payRes, evtPayRes, attRes, billRes, pointsRes, allMonthlyRes] = await Promise.all([
+    const [membRes, payRes, evtPayRes, attRes, billRes, pointsRes, allMonthlyRes, retailRes] = await Promise.all([
       supabase.from('student_memberships')
         .select('*, membership_types(name, category, billing_cycle, price)')
         .eq('student_id', student.id)
@@ -202,6 +203,11 @@ export default function StudentProfile({ student, onClose, onEdit }) {
       supabase.from('points_log')
         .select('student_id, points')
         .gte('awarded_at', startOfMonth.toISOString()),
+      supabase.from('retail_sales')
+        .select('id, quantity, total, unit_price, payment_method, sold_at, retail_items(name, category)')
+        .eq('student_id', student.id)
+        .order('sold_at', { ascending: false })
+        .limit(50),
     ])
 
     setMemberships(membRes.data ?? [])
@@ -209,6 +215,7 @@ export default function StudentProfile({ student, onClose, onEdit }) {
     setEventPay(evtPayRes.data ?? [])
     setAttendance(attRes.data ?? [])
     setBillingId(billRes.data?.id ?? null)
+    setRetailPurchases(retailRes.data ?? [])
 
     const pts = (pointsRes.data ?? []).reduce((s, p) => s + p.points, 0)
     setTotalPoints(pts)
@@ -419,6 +426,34 @@ export default function StudentProfile({ student, onClose, onEdit }) {
             </div>
           )}
         </Section>
+
+        {/* Retail purchases */}
+        {retailPurchases.length > 0 && (
+          <Section title={`Retail Purchases — ${retailPurchases.length}`}>
+            <div className="overflow-x-auto -mx-5">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-y border-slate-200">
+                  <tr>
+                    {['Date', 'Item', 'Qty', 'Total', 'Method'].map(h => (
+                      <th key={h} className="px-5 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {retailPurchases.map(p => (
+                    <tr key={p.id} className="hover:bg-slate-50">
+                      <td className="px-5 py-2.5 text-slate-600 whitespace-nowrap text-xs">{fmtDate(p.sold_at)}</td>
+                      <td className="px-5 py-2.5 font-medium text-slate-700">{p.retail_items?.name ?? '—'}</td>
+                      <td className="px-5 py-2.5 text-slate-600">{p.quantity}</td>
+                      <td className="px-5 py-2.5 font-semibold text-emerald-700">{fmt$(p.total)}</td>
+                      <td className="px-5 py-2.5 text-xs text-slate-500 capitalize">{p.payment_method ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        )}
 
         {/* Notes */}
         {student.notes && (
