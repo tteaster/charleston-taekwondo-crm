@@ -23,7 +23,7 @@ export default function LeadCard({ lead, statuses, onEdit, onStatusChange }) {
   const fullName = `${lead.first_name} ${lead.last_name}`
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow select-none">
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0 mr-2">
           <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{fullName}</p>
