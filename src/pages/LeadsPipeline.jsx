@@ -27,20 +27,15 @@ export const STATUSES = [
 
 // ── Draggable card wrapper ────────────────────────────────────────────────────
 
-function DraggableCard({ lead, statuses, onEdit, onStatusChange, canEdit, onConvert }) {
+function DraggableCard({ lead, canEdit, onEdit }) {
   const {
-    attributes,
-    listeners,
-    setNodeRef: setDragRef,
-    isDragging,
+    attributes, listeners, setNodeRef: setDragRef, isDragging,
   } = useDraggable({
     id: lead.id,
     data: { status: lead.status },
     disabled: !canEdit,
   })
 
-  // Also register as a drop target so dropping on a card (not just column
-  // background) resolves to that card's column status.
   const { setNodeRef: setDropRef } = useDroppable({
     id: `card-${lead.id}`,
     data: { status: lead.status },
@@ -56,13 +51,7 @@ function DraggableCard({ lead, statuses, onEdit, onStatusChange, canEdit, onConv
       {...attributes}
       {...listeners}
     >
-      <LeadCard
-        lead={lead}
-        statuses={statuses}
-        onEdit={onEdit}
-        onStatusChange={onStatusChange}
-        onConvert={onConvert}
-      />
+      <LeadCard lead={lead} onEdit={onEdit} />
     </div>
   )
 }
@@ -270,11 +259,8 @@ export default function LeadsPipeline() {
                       <DraggableCard
                         key={lead.id}
                         lead={lead}
-                        statuses={STATUSES}
                         canEdit={canEdit}
                         onEdit={() => openEdit(lead)}
-                        onStatusChange={newStatus => updateLeadStatus(lead.id, newStatus)}
-                        onConvert={() => openConvert(lead)}
                       />
                     ))}
                   </DroppableColumn>
@@ -286,12 +272,7 @@ export default function LeadsPipeline() {
             <DragOverlay dropAnimation={{ duration: 180, easing: 'ease' }}>
               {activeLead && (
                 <div className="rotate-1 scale-105 shadow-2xl cursor-grabbing opacity-95 w-60">
-                  <LeadCard
-                    lead={activeLead}
-                    statuses={STATUSES}
-                    onEdit={() => {}}
-                    onStatusChange={() => {}}
-                  />
+                  <LeadCard lead={activeLead} onEdit={() => {}} />
                 </div>
               )}
             </DragOverlay>

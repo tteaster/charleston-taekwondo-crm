@@ -1,145 +1,152 @@
 import { useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 
-const SOURCE_COLORS = {
-  walk_in: 'bg-teal-100 text-teal-700', website: 'bg-blue-100 text-blue-700',
-  facebook_ad: 'bg-indigo-100 text-indigo-700', instagram_ad: 'bg-pink-100 text-pink-700',
-  referral: 'bg-purple-100 text-purple-700', other: 'bg-slate-100 text-slate-600',
+// Temperature colours
+const TEMP_DOT = {
+  hot:  'bg-emerald-400',
+  warm: 'bg-amber-400',
+  cold: 'bg-blue-400',
 }
-const SOURCE_LABELS = {
-  walk_in: 'Walk-in', website: 'Website', facebook_ad: 'FB Ad',
-  instagram_ad: 'IG Ad', referral: 'Referral', other: 'Other',
+const TEMP_TEXT_CLS = {
+  hot:  'text-emerald-600',
+  warm: 'text-amber-600',
+  cold: 'text-blue-500',
+}
+const TEMP_BORDER = {
+  hot:  '#34d399', // emerald-400
+  warm: '#fbbf24', // amber-400
+  cold: '#60a5fa', // blue-400
 }
 
-const TEMP_CLS = {
-  hot:  'bg-emerald-100 text-emerald-700',
-  warm: 'bg-amber-100 text-amber-700',
-  cold: 'bg-blue-100 text-blue-700',
+// ── Icon components ──────────────────────────────────────────────────────────
+
+function PhoneIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 shrink-0">
+      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+    </svg>
+  )
 }
-const TEMP_LABELS = { hot: '🔥 Hot', warm: '☀️ Warm', cold: '❄️ Cold' }
 
-export default function LeadCard({ lead, statuses, onEdit, onStatusChange, onConvert }) {
-  const { canEdit } = useAuth()
-  const [quickAction, setQuickAction] = useState(null) // 'sms' | 'email' | null
+function MailIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 shrink-0">
+      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+    </svg>
+  )
+}
 
-  const fullName   = `${lead.first_name} ${lead.last_name}`
-  const daysSince  = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000)
+// ── Lead card ─────────────────────────────────────────────────────────────────
 
-  function logSMS(e) {
+export default function LeadCard({ lead, onEdit }) {
+  const [flash, setFlash] = useState(null) // 'sms' | 'email' | '?'
+
+  const fullName  = `${lead.first_name} ${lead.last_name}`
+  const daysSince = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000)
+  const borderColor = TEMP_BORDER[lead.temperature] ?? '#e2e8f0'
+
+  function logAction(type, e) {
     e.stopPropagation()
-    console.log(`[Lead SMS] ${fullName} | ${lead.phone}`)
-    setQuickAction('sms')
-    setTimeout(() => setQuickAction(null), 1500)
-  }
-
-  function logEmail(e) {
-    e.stopPropagation()
-    console.log(`[Lead Email] ${fullName} | ${lead.email}`)
-    setQuickAction('email')
-    setTimeout(() => setQuickAction(null), 1500)
+    if (type === 'sms')   console.log(`[Lead SMS]   ${fullName} | ${lead.phone}`)
+    if (type === 'email') console.log(`[Lead Email] ${fullName} | ${lead.email}`)
+    if (type === '?')     console.log(`[Lead Unqualified] ${fullName}`)
+    setFlash(type)
+    setTimeout(() => setFlash(null), 1400)
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow select-none">
-      {/* Name row */}
-      <div className="flex items-start justify-between mb-1.5">
-        <div className="flex-1 min-w-0 mr-2">
-          <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{fullName}</p>
-          {lead.child_name && (
-            <p className="text-xs text-slate-500 mt-0.5 truncate">
-              {lead.child_name}{lead.child_age ? `, age ${lead.child_age}` : ''}
-            </p>
-          )}
-        </div>
-        {lead.source && (
-          <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${SOURCE_COLORS[lead.source] ?? SOURCE_COLORS.other}`}>
-            {SOURCE_LABELS[lead.source] ?? lead.source}
-          </span>
-        )}
-      </div>
-
-      {lead.phone && <p className="text-xs text-slate-500 mb-0.5">{lead.phone}</p>}
-      {lead.locations?.name && <p className="text-xs text-slate-400 mb-1">{lead.locations.name}</p>}
-      {lead.next_followup_at && (
-        <p className="text-xs text-amber-600 mb-1">
-          Follow-up: {new Date(lead.next_followup_at).toLocaleDateString()}
-        </p>
-      )}
-
-      {/* Meta: days + temperature */}
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">
-          {daysSince}d
-        </span>
+    <div
+      onClick={onEdit}
+      style={{ borderLeft: `4px solid ${borderColor}` }}
+      className="bg-white rounded-lg border border-slate-200 p-3 cursor-pointer hover:shadow-md transition-shadow select-none"
+    >
+      {/* Row 1: temperature + name + days */}
+      <div className="flex items-center gap-1.5 mb-1.5">
         {lead.temperature && (
-          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${TEMP_CLS[lead.temperature]}`}>
-            {TEMP_LABELS[lead.temperature]}
+          <span className="flex items-center gap-1 shrink-0">
+            <span className={`w-2 h-2 rounded-full ${TEMP_DOT[lead.temperature]}`} />
+            <span className={`text-xs font-bold uppercase tracking-wide ${TEMP_TEXT_CLS[lead.temperature]}`}>
+              {lead.temperature}
+            </span>
           </span>
         )}
+        <p className="text-sm font-semibold text-slate-800 flex-1 truncate leading-tight">
+          {fullName}
+        </p>
+        <span className="text-xs text-slate-400 shrink-0 font-mono">{daysSince}d</span>
       </div>
 
-      {/* Quick actions: SMS / Email */}
-      {(lead.phone || lead.email) && (
-        <div className="flex items-center gap-1.5 mb-2">
-          {lead.phone && (
-            <button
-              type="button"
-              onClick={logSMS}
-              title={`SMS ${lead.phone}`}
-              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                quickAction === 'sms'
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
-                  : 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-              }`}
-            >
-              {quickAction === 'sms' ? '✓ SMS' : '📱 SMS'}
-            </button>
-          )}
-          {lead.email && (
-            <button
-              type="button"
-              onClick={logEmail}
-              title={`Email ${lead.email}`}
-              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                quickAction === 'email'
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
-                  : 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-              }`}
-            >
-              {quickAction === 'email' ? '✓ Emailed' : '✉️ Email'}
-            </button>
-          )}
+      {/* Row 2: phone */}
+      {lead.phone && (
+        <div className="flex items-center gap-1.5 mb-1 text-slate-500">
+          <PhoneIcon />
+          <span className="text-xs">{lead.phone}</span>
         </div>
       )}
 
-      {/* Candit actions: status dropdown, Edit, Convert */}
-      {canEdit && (
-        <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
-          <select
-            value={lead.status}
-            onChange={e => onStatusChange(e.target.value)}
-            onClick={e => e.stopPropagation()}
-            className="text-xs border border-slate-200 rounded px-1.5 py-1 flex-1 bg-white min-w-0 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-          >
-            {statuses.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-          <button
-            onClick={onEdit}
-            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium shrink-0"
-          >
-            Edit
-          </button>
-          {lead.status !== 'converted' && onConvert && (
-            <button
-              onClick={e => { e.stopPropagation(); onConvert() }}
-              className="text-xs text-emerald-600 hover:text-emerald-800 font-medium shrink-0"
-              title="Convert to student"
-            >
-              Convert →
-            </button>
-          )}
+      {/* Row 3: email */}
+      {lead.email && (
+        <div className="flex items-center gap-1.5 mb-2 text-slate-400">
+          <MailIcon />
+          <span className="text-xs truncate">{lead.email}</span>
         </div>
       )}
+
+      {/* Row 4: quick-action buttons */}
+      <div
+        className="flex items-center gap-1.5 pt-2 border-t border-slate-100"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Unqualified / unknown */}
+        <button
+          type="button"
+          onClick={e => logAction('?', e)}
+          title="Mark as unqualified"
+          className={`w-7 h-7 flex items-center justify-center rounded border text-xs font-medium transition-colors ${
+            flash === '?'
+              ? 'bg-slate-100 border-slate-300 text-slate-700'
+              : 'border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+          }`}
+        >
+          ?
+        </button>
+
+        {/* SMS */}
+        {lead.phone && (
+          <button
+            type="button"
+            onClick={e => logAction('sms', e)}
+            title={`SMS ${lead.phone}`}
+            className={`w-7 h-7 flex items-center justify-center rounded border transition-colors ${
+              flash === 'sms'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
+                : 'border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+            }`}
+          >
+            <PhoneIcon />
+          </button>
+        )}
+
+        {/* Email */}
+        {lead.email && (
+          <button
+            type="button"
+            onClick={e => logAction('email', e)}
+            title={`Email ${lead.email}`}
+            className={`w-7 h-7 flex items-center justify-center rounded border transition-colors ${
+              flash === 'email'
+                ? 'bg-blue-50 border-blue-300 text-blue-600'
+                : 'border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+            }`}
+          >
+            <MailIcon />
+          </button>
+        )}
+
+        {/* Brief confirmation flash */}
+        {flash && (
+          <span className="text-xs text-emerald-500 font-medium ml-0.5">✓</span>
+        )}
+      </div>
     </div>
   )
 }
