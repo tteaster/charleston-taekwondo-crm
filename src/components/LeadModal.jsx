@@ -1,37 +1,29 @@
 import { useState, useEffect } from 'react'
 
 const SOURCES = [
-  { value: 'walk_in', label: 'Walk-in' },
-  { value: 'website', label: 'Website' },
-  { value: 'facebook_ad', label: 'Facebook Ad' },
+  { value: 'walk_in',      label: 'Walk-in' },
+  { value: 'website',      label: 'Website' },
+  { value: 'facebook_ad',  label: 'Facebook Ad' },
   { value: 'instagram_ad', label: 'Instagram Ad' },
-  { value: 'referral', label: 'Referral' },
-  { value: 'other', label: 'Other' },
+  { value: 'referral',     label: 'Referral' },
+  { value: 'other',        label: 'Other' },
 ]
 
 const STATUSES = [
-  { value: 'new', label: 'New' },
-  { value: 'contacted', label: 'Contacted' },
+  { value: 'new',             label: 'New' },
+  { value: 'contacted',       label: 'Contacted' },
   { value: 'trial_scheduled', label: 'Trial Scheduled' },
   { value: 'trial_completed', label: 'Trial Completed' },
-  { value: 'converted', label: 'Converted' },
-  { value: 'lost', label: 'Lost' },
+  { value: 'converted',       label: 'Converted' },
+  { value: 'lost',            label: 'Lost' },
 ]
 
 const EMPTY = {
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  child_name: '',
-  child_age: '',
-  source: '',
-  source_detail: '',
-  location_id: '',
-  status: 'new',
-  notes: '',
-  next_followup_at: '',
-  lost_reason: '',
+  first_name: '', last_name: '', email: '', phone: '',
+  child_name: '', child_age: '',
+  source: '', source_detail: '',
+  location_id: '', status: 'new', temperature: '',
+  notes: '', next_followup_at: '', lost_reason: '',
 }
 
 function Field({ label, required, children }) {
@@ -47,27 +39,28 @@ function Field({ label, required, children }) {
 
 const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400'
 
-export default function LeadModal({ lead, locations, onSave, onClose }) {
-  const [form, setForm] = useState(EMPTY)
+export default function LeadModal({ lead, locations, onSave, onClose, onConvert }) {
+  const [form,   setForm]   = useState(EMPTY)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
+  const [error,  setError]  = useState(null)
 
   useEffect(() => {
     if (lead) {
       setForm({
-        first_name: lead.first_name ?? '',
-        last_name: lead.last_name ?? '',
-        email: lead.email ?? '',
-        phone: lead.phone ?? '',
-        child_name: lead.child_name ?? '',
-        child_age: lead.child_age ?? '',
-        source: lead.source ?? '',
-        source_detail: lead.source_detail ?? '',
-        location_id: lead.location_id ?? '',
-        status: lead.status ?? 'new',
-        notes: lead.notes ?? '',
+        first_name:      lead.first_name      ?? '',
+        last_name:       lead.last_name       ?? '',
+        email:           lead.email           ?? '',
+        phone:           lead.phone           ?? '',
+        child_name:      lead.child_name      ?? '',
+        child_age:       lead.child_age       ?? '',
+        source:          lead.source          ?? '',
+        source_detail:   lead.source_detail   ?? '',
+        location_id:     lead.location_id     ?? '',
+        status:          lead.status          ?? 'new',
+        temperature:     lead.temperature     ?? '',
+        notes:           lead.notes           ?? '',
         next_followup_at: lead.next_followup_at ? lead.next_followup_at.slice(0, 10) : '',
-        lost_reason: lead.lost_reason ?? '',
+        lost_reason:     lead.lost_reason     ?? '',
       })
     }
   }, [lead])
@@ -81,19 +74,20 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
     setSaving(true)
     setError(null)
     const payload = {
-      first_name: form.first_name,
-      last_name: form.last_name,
-      email: form.email || null,
-      phone: form.phone || null,
-      child_name: form.child_name || null,
-      child_age: form.child_age ? parseInt(form.child_age) : null,
-      source: form.source || null,
-      source_detail: form.source_detail || null,
-      location_id: form.location_id || null,
-      status: form.status,
-      notes: form.notes || null,
+      first_name:      form.first_name,
+      last_name:       form.last_name,
+      email:           form.email           || null,
+      phone:           form.phone           || null,
+      child_name:      form.child_name      || null,
+      child_age:       form.child_age ? parseInt(form.child_age) : null,
+      source:          form.source          || null,
+      source_detail:   form.source_detail   || null,
+      location_id:     form.location_id     || null,
+      status:          form.status,
+      temperature:     form.temperature     || null,
+      notes:           form.notes           || null,
       next_followup_at: form.next_followup_at || null,
-      lost_reason: form.status === 'lost' ? form.lost_reason || null : null,
+      lost_reason:     form.status === 'lost' ? form.lost_reason || null : null,
     }
     try {
       await onSave(payload, lead?.id)
@@ -102,6 +96,9 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
       setSaving(false)
     }
   }
+
+  const isTrial    = false // lead modal doesn't have trial dates
+  const canConvert = lead?.id && lead?.status !== 'converted' && !!onConvert
 
   return (
     <div
@@ -113,15 +110,14 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
           <h2 className="text-lg font-semibold text-slate-800">
             {lead ? 'Edit Lead' : 'Add New Lead'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded"
-          >
+          <button onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded">
             ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Name */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="First Name" required>
               <input required value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputCls} />
@@ -131,6 +127,7 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
             </Field>
           </div>
 
+          {/* Contact */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Email">
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={inputCls} />
@@ -140,6 +137,7 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
             </Field>
           </div>
 
+          {/* Child */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Child's Name">
               <input value={form.child_name} onChange={e => set('child_name', e.target.value)} className={inputCls} />
@@ -149,6 +147,7 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
             </Field>
           </div>
 
+          {/* Source */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Source">
               <select value={form.source} onChange={e => set('source', e.target.value)} className={inputCls}>
@@ -157,15 +156,12 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
               </select>
             </Field>
             <Field label="Source Detail">
-              <input
-                value={form.source_detail}
-                onChange={e => set('source_detail', e.target.value)}
-                placeholder="e.g. referral name"
-                className={inputCls}
-              />
+              <input value={form.source_detail} onChange={e => set('source_detail', e.target.value)}
+                placeholder="e.g. referral name" className={inputCls} />
             </Field>
           </div>
 
+          {/* Location + Status */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Location">
               <select value={form.location_id} onChange={e => set('location_id', e.target.value)} className={inputCls}>
@@ -180,6 +176,16 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
             </Field>
           </div>
 
+          {/* Temperature */}
+          <Field label="Temperature">
+            <select value={form.temperature} onChange={e => set('temperature', e.target.value)} className={inputCls}>
+              <option value="">— Not set —</option>
+              <option value="hot">🔥 Hot</option>
+              <option value="warm">☀️ Warm</option>
+              <option value="cold">❄️ Cold</option>
+            </select>
+          </Field>
+
           {form.status === 'lost' && (
             <Field label="Lost Reason">
               <input value={form.lost_reason} onChange={e => set('lost_reason', e.target.value)} className={inputCls} />
@@ -191,27 +197,30 @@ export default function LeadModal({ lead, locations, onSave, onClose }) {
           </Field>
 
           <Field label="Notes">
-            <textarea
-              value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-              rows={3}
-              className={`${inputCls} resize-none`}
-            />
+            <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3}
+              className={`${inputCls} resize-none`} />
           </Field>
 
           {error && (
             <p className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{error}</p>
           )}
 
+          {/* Convert to Student (edit mode only, not already converted) */}
+          {canConvert && (
+            <div className="border-t border-slate-200 pt-3">
+              <button type="button" onClick={onConvert}
+                className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-sm font-medium py-2.5 rounded-lg transition-colors">
+                ✓ Convert to Student
+              </button>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
+            <button type="submit" disabled={saving}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">
               {saving ? 'Saving…' : lead ? 'Save Changes' : 'Add Lead'}
             </button>
           </div>

@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import LeadCard from '../components/LeadCard'
 import LeadModal from '../components/LeadModal'
+import ConvertLeadModal from '../components/ConvertLeadModal'
 
 export const STATUSES = [
   { key: 'new',             label: 'New',             color: 'bg-slate-500' },
@@ -26,7 +27,7 @@ export const STATUSES = [
 
 // ── Draggable card wrapper ────────────────────────────────────────────────────
 
-function DraggableCard({ lead, statuses, onEdit, onStatusChange, canEdit }) {
+function DraggableCard({ lead, statuses, onEdit, onStatusChange, canEdit, onConvert }) {
   const {
     attributes,
     listeners,
@@ -60,6 +61,7 @@ function DraggableCard({ lead, statuses, onEdit, onStatusChange, canEdit }) {
         statuses={statuses}
         onEdit={onEdit}
         onStatusChange={onStatusChange}
+        onConvert={onConvert}
       />
     </div>
   )
@@ -98,7 +100,8 @@ export default function LeadsPipeline() {
   const [editingLead, setEditingLead] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [activeId, setActiveId] = useState(null) // id of card being dragged
+  const [activeId, setActiveId]         = useState(null)
+  const [convertingLead, setConvertingLead] = useState(null)
 
   // Require 8 px movement before drag activates — prevents accidental drags
   // when clicking the status dropdown or Edit button.
@@ -148,6 +151,16 @@ export default function LeadsPipeline() {
 
   function openEdit(lead) { setEditingLead(lead); setModalOpen(true) }
   function openNew()       { setEditingLead(null); setModalOpen(true) }
+
+  function openConvert(lead) {
+    setModalOpen(false)       // close edit modal if open
+    setConvertingLead(lead)
+  }
+
+  function handleConverted(leadId) {
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: 'converted' } : l))
+    setConvertingLead(null)
+  }
 
   // ── Drag handlers ────────────────────────────────────────────────────────
 
@@ -261,6 +274,7 @@ export default function LeadsPipeline() {
                         canEdit={canEdit}
                         onEdit={() => openEdit(lead)}
                         onStatusChange={newStatus => updateLeadStatus(lead.id, newStatus)}
+                        onConvert={() => openConvert(lead)}
                       />
                     ))}
                   </DroppableColumn>
@@ -291,6 +305,16 @@ export default function LeadsPipeline() {
           locations={locations}
           onSave={handleSave}
           onClose={() => { setModalOpen(false); setEditingLead(null) }}
+          onConvert={editingLead ? () => openConvert(editingLead) : undefined}
+        />
+      )}
+
+      {convertingLead && (
+        <ConvertLeadModal
+          lead={convertingLead}
+          locations={locations}
+          onConverted={handleConverted}
+          onClose={() => setConvertingLead(null)}
         />
       )}
     </div>
